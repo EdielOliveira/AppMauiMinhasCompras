@@ -90,8 +90,43 @@ public partial class ListaProduto : ContentPage
         });
     }
 
-private void MenuItem_Clicked(object sender, EventArgs e)
+private async void MenuItem_Clicked(object sender, EventArgs e)
     {
+        try
+        {
+            MenuItem selecionado = sender as MenuItem;
+
+            Produto p = selecionado.BindingContext as Produto;
+            
+            bool confirm = await DisplayAlert("Tem Certeza?", $"Remover {p.Descricao}?", "Sim", "Não");
+
+            if (confirm)
+            {
+                await App.DB.Delete(p.Id);
+                lista.Remove(p);
+            }
+        }
+        catch (Exception ex)
+        {
+           await DisplayAlert("Ops", ex.Message, "OK");
+        }
+    }
+
+    private void lst_produtos_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+    {
+        try
+        {
+            Produto p = e.SelectedItem as Produto;
+
+            Navigation.PushAsync(new Views.EditarProduto
+            {
+                BindingContext = p,
+            });
+        }
+        catch (Exception ex) 
+        {
+             DisplayAlert("Ops", ex.Message, "OK");
+        }
 
     }
 }
