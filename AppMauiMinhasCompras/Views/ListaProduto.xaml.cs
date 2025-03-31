@@ -1,4 +1,5 @@
 ﻿using AppMauiMinhasCompras.Models;
+using Microsoft.Maui.Controls;
 using System.Collections.ObjectModel;
 
 namespace AppMauiMinhasCompras.Views;
@@ -6,7 +7,7 @@ namespace AppMauiMinhasCompras.Views;
 public partial class ListaProduto : ContentPage
 {
     //Searchbar Atualizada
-    private ObservableCollection<Produto> lista = new();
+    ObservableCollection<Produto> lista = new ObservableCollection<Produto>();
     private List<Produto> todosOsProdutos = new();
     private CancellationTokenSource debounceCts;
 
@@ -19,12 +20,14 @@ public partial class ListaProduto : ContentPage
 
     protected async override void OnAppearing()
     {
-        base.OnAppearing();
-
         try
         {
-            todosOsProdutos = await App.DB.GetAll();
-            AtualizarLista(todosOsProdutos);
+            lista.Clear();
+
+            List<Produto> tmp = await App.DB.GetAll();
+
+            tmp.ForEach(i => lista.Add(i));
+
         }
         catch (Exception ex)
         {
@@ -32,65 +35,72 @@ public partial class ListaProduto : ContentPage
         }
     }
 
-    private void AtualizarLista(List<Produto> novaLista)
+    private async void Txt_Search_TextChanged(object sender, TextChangedEventArgs e)
     {
+        try { 
+        string q = e.NewTextValue;
+
+        lst_produtos.IsRefreshing = true;
+
         lista.Clear();
-        foreach (var produto in novaLista)
-            lista.Add(produto);
+
+        List<Produto> tmp = await App.DB.Search(q);
+
+        tmp.ForEach(i => lista.Add(i));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "Ok");
+        }
+        finally
+        {
+            lst_produtos.IsRefreshing = false;
+        }
     }
 
-
-    private void ToolbarItem_Clicked(object sender, EventArgs e)
+    private async void ToolbarItem_Clicked(object sender, EventArgs e)
     {
-		try
-		{
-			Navigation.PushAsync(new Views.NovoProduto());
-
-		}catch (Exception ex)
-		{
-			DisplayAlert("Ops", ex.Message, "Ok");
-		}
+        try
+        {
+            Navigation.PushAsync(new Views.NovoProduto());
+        }
+        catch (Exception ex)
+        {
+           await DisplayAlert("Ops", ex.Message, "Ok");
+        }
 
     }
 
     private void ToolbarItem_Clicked_1(object sender, EventArgs e)
     {
-        double soma = lista.Sum(i => i.Total);
-        string msg = $"O total é {soma:C}";
-        DisplayAlert("Total dos Produtos", msg, "Ok");
-    }
-
-    // 🚀 Debounce + busca local
-    private void Txt_Search_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        debounceCts?.Cancel();
-        debounceCts = new CancellationTokenSource();
-
-        _ = Task.Run(async () =>
         {
-            try
+            if (lista.Count == 0)
             {
-                await Task.Delay(300, debounceCts.Token); // 300ms de debounce
-
-                string query = e.NewTextValue?.ToLowerInvariant() ?? "";
-
-                var filtrados = todosOsProdutos
-                    .Where(p => p.Descricao.ToLowerInvariant().Contains(query))
-                    .ToList();
-
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    AtualizarLista(filtrados);
-                });
+                DisplayAlert("Aviso", "Não há produtos cadastrados.", "Ok");
+                return;
             }
-            catch (TaskCanceledException)
+
+            double totalGeral = lista.Sum(p => p.Total);
+
+            var totaisPorCategoria = lista
+                .GroupBy(p => p.Categoria)
+                .Select(g => new { Categoria = g.Key, Total = g.Sum(p => p.Total) })
+                .OrderByDescending(g => g.Total)
+                .ToList();
+
+            string mensagem = $"Total Geral: {totalGeral:C}\n\n";
+
+            foreach (var categoria in totaisPorCategoria)
             {
-                // ignorado: debounce cancelado
+                mensagem += $"{categoria.Categoria}: {categoria.Total:C}\n";
             }
-        });
+
+            DisplayAlert("Resumo de Compras", mensagem, "Ok");
+        }
     }
 
-private async void MenuItem_Clicked(object sender, EventArgs e)
+
+    private async void MenuItem_Clicked(object sender, EventArgs e)
     {
         try
         {
@@ -128,5 +138,25 @@ private async void MenuItem_Clicked(object sender, EventArgs e)
              DisplayAlert("Ops", ex.Message, "OK");
         }
 
+    }
+
+    private async void lst_produtos_Refreshing(object sender, EventArgs e)
+    {
+        try
+        {
+            lista.Clear();
+
+            List<Produto> tmp = await App.DB.GetAll();
+
+            tmp.ForEach(i => lista.Add(i));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "OK");
+        }
+        finally
+        {
+            lst_produtos.IsRefreshing = false;
+        }
     }
 }

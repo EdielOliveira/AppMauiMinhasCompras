@@ -18,5 +18,9 @@
         
         <Label Text="Preço Unitario"/>
         <Entry x:Name="txt_preco" Keyboard="Numeric"/>
+
+        <Label Text="Categoria:"/>
+        <Picker x:Name="picker_categoria"/>
+
     </VerticalStackLayout>
 </ContentPage>

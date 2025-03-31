@@ -30,6 +30,8 @@ namespace AppMauiMinhasCompras
 
             //MainPage = new AppShell();
 
+            Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("pt-BR");
+
             MainPage = new NavigationPage(new Views.ListaProduto());
         }
     }

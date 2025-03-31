@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="AppMauiMinhasCompras.Views.EditarProduto"
-             Title="{Binding Descricao}">
+             Title= "Editar Produto">
 
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Salvar" Clicked="ToolbarItem_Clicked"/>
@@ -18,5 +18,17 @@
 
         <Label Text="Preço Unitario"/>
         <Entry x:Name="txt_preco" Text="{Binding Preco}" Keyboard="Numeric"/>
+
+        <Label Text="Categoria: "/>
+        <Picker x:Name="picker_categoria" SelectedItem="{Binding Categoria}">
+            <Picker.Items>
+                <x:String>Alimentos</x:String>
+                <x:String>Higiene</x:String>
+                <x:String>Limpeza</x:String>
+                <x:String>Eletrônicos</x:String>
+                <x:String>Roupas</x:String>
+                <x:String>Beleza</x:String>
+            </Picker.Items>
+        </Picker>
     </VerticalStackLayout>
 </ContentPage>
